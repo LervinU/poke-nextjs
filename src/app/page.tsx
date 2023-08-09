@@ -1,95 +1,70 @@
+'use client'
+
 import Image from 'next/image'
 import styles from './page.module.css'
+import { useEffect, useState } from 'react';
+import useSWR from 'swr'
+
+import PokemonSpriteRow from '@/components/PokemonSpriteRow';
+import PokemonInformation from '@/components/PokemonInformation';
+import PokemonImage from '@/components/PokemonImage';
+import SearchBar from '@/components/SearchBar';
+import LoadingSpinner from '@/components/LoaginSpinner';
+import colours from '@/utils/typeColors';
 
 export default function Home() {
+  const [search, setSearch] = useState('torterra');
+  const { data, error, isLoading } = useSWR(`https://pokeapi.co/api/v2/pokemon/${search}`, fetcher)
+
+  useEffect(() => {
+    require("bootstrap/dist/js/bootstrap.bundle.min.js");
+  }, []);
+
+  if (error) return <div>failed to load</div>
+  if (isLoading) return (
+    <LoadingSpinner></LoadingSpinner>
+  )
+  
+  const onSearch = (ref: any) => {
+    const pokemonSeach = ref.current.value.toLowerCase();
+    setSearch(pokemonSeach);
+}
+
+ const getColours = () => {
+  const coloursArr = data.types.map((_type: any) => {
+      const typeName = _type.type.name
+      return colours[typeName as keyof typeof colours]
+  })
+
+  if(coloursArr.length === 1) {
+    coloursArr.push("#F7F7F7");
+  }
+  return coloursArr;
+}
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    
+    <main className="" style={{ background: `linear-gradient(110deg, ${getColours()[0]} 50%, ${getColours()[1]} 50%)`, width:"100vw", height:"100vh"}}>
+      
+      <div>
+        <div className="container text-center">
+          <Image src="/pokemonlogo.png" width={400} height={200} alt="Pokemon Logo"/>
         </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+        <div className="container mt-5 ">
+          <SearchBar onSearch={onSearch}></SearchBar>
+          <div className="row">
+            <div className="col">
+              <PokemonImage url={data.sprites.other.dream_world.front_default}></PokemonImage>
+            </div>
+            <div className="col">
+              <PokemonInformation data={data}></PokemonInformation>
+            </div>
+            
+          </div>
+        </div>
       </div>
     </main>
   )
 }
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
